@@ -14,8 +14,9 @@ module Kanal
       class DiscordInterface < Kanal::Core::Interfaces::Interface
         def initialize(core, bot_token)
           super(core)
-
           @bot_token = bot_token
+
+          @bot = Discordrb::Bot.new token: @bot_token
 
           @core.register_plugin Kanal::Plugins::Batteries::BatteriesPlugin.new
           @core.register_plugin Kanal::Interfaces::Discord::Plugins::DiscordIntegrationPlugin.new
@@ -33,9 +34,11 @@ module Kanal
             input.dc_username = event.user.username
             input.dc_channel_id = event.channel.id
 
-            output = router.create_output_for_input input
+            router.consume_input input
 
-            send_output event, output
+            # output = router.create_output_for_input input
+            #
+            # send_output event, output
           end
 
           bot.message do |event|
@@ -47,15 +50,21 @@ module Kanal
 
             puts "input.dc_channel_id: #{input.dc_channel_id}"
 
-            output = router.create_output_for_input input
+            router.consume_input input
 
-            send_output event, output
+            # output = router.create_output_for_input input
+            #
+            # send_output event, output
           end
 
           bot.run
         end
 
-        def send_output(event, output)
+        def consume_output(output)
+          send_output @bot, output
+        end
+
+        def send_output(bot, output)
           components = nil
           buttons = []
 
@@ -81,7 +90,7 @@ module Kanal
             ]
           end
 
-          uri = URI("https://discord.com/api/channels/#{event.channel.id}/messages")
+          uri = URI("https://discord.com/api/channels/#{output.input.dc_channel_id}/messages")
 
           headers = {
             "Content-Type" => "application/json",
@@ -95,19 +104,27 @@ module Kanal
 
           body["components"] = components if components
 
-          Net::HTTP.post(uri, body.to_json, headers)
-
           image_path = output.dc_image_path
 
-          event.channel.send_file file: File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
+          body["file"] = File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
 
-          audio_path = output.dc_audio_path
+          Net::HTTP.post(uri, body.to_json, headers)
 
-          event.channel.send_file file: File.open(output.dc_audio_path, 'r') if audio_path && File.exist?(audio_path)
+          # image_path = output.dc_image_path
+          #
+          # event.channel.send_file file: File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
 
-          document_path = output.dc_document_path
-
-          event.channel.send_file file: File.open(output.dc_document_path, 'r') if document_path && File.exist?(document_path)
+          # image_path = output.dc_image_path
+          #
+          # event.channel.send_file file: File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
+          #
+          # audio_path = output.dc_audio_path
+          #
+          # event.channel.send_file file: File.open(output.dc_audio_path, 'r') if audio_path && File.exist?(audio_path)
+          #
+          # document_path = output.dc_document_path
+          #
+          # event.channel.send_file file: File.open(output.dc_document_path, 'r') if document_path && File.exist?(document_path)
         end
 
         private
