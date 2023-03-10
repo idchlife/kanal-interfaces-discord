@@ -108,23 +108,21 @@ module Kanal
 
           body["file"] = File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
 
+          puts body
+
           Net::HTTP.post(uri, body.to_json, headers)
 
-          # image_path = output.dc_image_path
-          #
-          # event.channel.send_file file: File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
+          image_path = output.dc_image_path
 
-          # image_path = output.dc_image_path
-          #
-          # event.channel.send_file file: File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
-          #
-          # audio_path = output.dc_audio_path
-          #
-          # event.channel.send_file file: File.open(output.dc_audio_path, 'r') if audio_path && File.exist?(audio_path)
-          #
-          # document_path = output.dc_document_path
-          #
-          # event.channel.send_file file: File.open(output.dc_document_path, 'r') if document_path && File.exist?(document_path)
+          bot.send_file output.dc_channel_id, File.open(output.dc_image_path, 'r') if image_path && File.exist?(image_path)
+
+          audio_path = output.dc_audio_path
+
+          bot.send_file output.dc_channel_id, File.open(output.dc_audio_path, 'r') if audio_path && File.exist?(audio_path)
+
+          document_path = output.dc_document_path
+
+          bot.send_file output.dc_channel_id, File.open(output.dc_document_path, 'r') if document_path && File.exist?(document_path)
         end
 
         private
